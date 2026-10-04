@@ -1,0 +1,17 @@
+# Render Blueprint: Dashboard → New → Blueprint → pick this repo.
+# Render asks for GROQ_API_KEY during setup (sync: false keeps it out of git).
+services:
+  - type: web
+    name: yaad
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: GROQ_API_KEY
+        sync: false

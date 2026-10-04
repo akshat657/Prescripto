@@ -1,0 +1,33 @@
+# Pings the deployed app so a Render free instance doesn't spin down after
+# 15 minutes idle. (Vercel doesn't sleep; there this just checks uptime.)
+#
+# Setup: GitHub repo → Settings → Secrets and variables → Actions → Variables →
+#        New variable  APP_URL = https://your-app.onrender.com   (no trailing slash)
+#
+# Notes: GitHub may delay scheduled runs by several minutes at busy times, and it
+# pauses schedules in public repos after 60 days without commits — re-enable
+# from the Actions tab if that happens.
+name: Keep alive
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping /api/health
+        env:
+          APP_URL: ${{ vars.APP_URL }}
+        run: |
+          if [ -z "$APP_URL" ]; then
+            echo "::warning::Set the APP_URL repository variable to enable pings."
+            exit 0
+          fi
+          # A sleeping Render instance can take ~50 s to wake, so allow retries.
+          curl --fail --silent --show-error --max-time 90 \
+               --retry 3 --retry-delay 10 --retry-all-errors \
+               "$APP_URL/api/health"
